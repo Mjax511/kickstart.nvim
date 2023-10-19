@@ -1,0 +1,5 @@
+vim.keymap.set({ 'i' }, 'jk', '<ESC>')
+vim.keymap.set({ 'v' }, '<leader>c', '"+y')
+vim.keymap.set({ 'n' }, '<leader>w', ':set wrap!<CR>')
+vim.keymap.set({ 'n' }, '<leader>r', ':set rnu!<CR>')
+vim.keymap.set({ 'n' }, '<leader>es', ':! eslint_d --fix %<CR><CR>')
