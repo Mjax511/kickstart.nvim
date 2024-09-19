@@ -30,6 +30,28 @@ return {
       build = "npm i && npm run compile vsDebugServerBundle && mv dist out"
     },
   },
+  keys = function(_, keys)
+    local dap = require 'dap'
+    local dapui = require 'dapui'
+    return {
+      -- Basic debugging keymaps, feel free to change to your liking!
+      { '<F5>', dap.continue, desc = 'Debug: Start/Continue' },
+      { '<F1>', dap.step_into, desc = 'Debug: Step Into' },
+      { '<F2>', dap.step_over, desc = 'Debug: Step Over' },
+      { '<F3>', dap.step_out, desc = 'Debug: Step Out' },
+      { '<leader>b', dap.toggle_breakpoint, desc = 'Debug: Toggle Breakpoint' },
+      {
+        '<leader>B',
+        function()
+          dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+        end,
+        desc = 'Debug: Set Breakpoint',
+      },
+      -- Toggle to see last session result. Without this, you can't see session output in case of unhandled exception.
+      { '<F7>', dapui.toggle, desc = 'Debug: See last session result.' },
+      unpack(keys),
+    }
+  end,
   config = function()
     local dap = require 'dap'
     local dapui = require 'dapui'
@@ -37,7 +59,7 @@ return {
     require('mason-nvim-dap').setup {
       -- Makes a best effort to setup the various debuggers with
       -- reasonable debug configurations
-      automatic_setup = true,
+      automatic_installation = true,
 
       -- You can provide additional configuration to the handlers,
       -- see mason-nvim-dap README for more information
@@ -50,16 +72,6 @@ return {
         'delve',
       },
     }
-
-    -- Basic debugging keymaps, feel free to change to your liking!
-    vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
-    vim.keymap.set('n', '<F1>', dap.step_into, { desc = 'Debug: Step Into' })
-    vim.keymap.set('n', '<F2>', dap.step_over, { desc = 'Debug: Step Over' })
-    vim.keymap.set('n', '<F3>', dap.step_out, { desc = 'Debug: Step Out' })
-    vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle Breakpoint' })
-    vim.keymap.set('n', '<leader>B', function()
-      dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
-    end, { desc = 'Debug: Set Breakpoint' })
 
     -- Dap UI setup
     -- For more information, see |:help nvim-dap-ui|
@@ -83,70 +95,17 @@ return {
       },
     }
 
-    -- Toggle to see last session result. Without this, you can't see session output in case of unhandled exception.
-    vim.keymap.set('n', '<F7>', dapui.toggle, { desc = 'Debug: See last session result.' })
-
     dap.listeners.after.event_initialized['dapui_config'] = dapui.open
     dap.listeners.before.event_terminated['dapui_config'] = dapui.close
     dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
     -- Install golang specific config
-    require('dap-go').setup()
-    -- require("dap-vscode-js").setup({
-    --   debugger_path = vim.fn.stdpath("data") .. "/lazy/vscode-js-debug",
-    --   adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
-    -- })
-    -- for _, language in ipairs({ "typescript", "javascript", "svelte", "typescriptreact" }) do
-    --   require("dap").configurations[language] = {
-    --     -- attach to a node process that has been started with
-    --     -- `--inspect` for longrunning tasks or `--inspect-brk` for short tasks
-    --     -- npm script -> `node --inspect-brk ./node_modules/.bin/vite dev`
-    --     {
-    --       -- use nvim-dap-vscode-js's pwa-node debug adapter
-    --       type = "pwa-node",
-    --       -- attach to an already running node process with --inspect flag
-    --       -- default port: 9222
-    --       request = "attach",
-    --       -- allows us to pick the process using a picker
-    --       processId = require 'dap.utils'.pick_process,
-    --       -- name of the debug action you have to select for this config
-    --       name = "Attach debugger to existing `node --inspect` process",
-    --       -- for compiled languages like TypeScript or Svelte.js
-    --       sourceMaps = true,
-    --       -- resolve source maps in nested locations while ignoring node_modules
-    --       resolveSourceMapLocations = {
-    --         "${workspaceFolder}/**",
-    --         "!**/node_modules/**" },
-    --       -- path to src in vite based projects (and most other projects as well)
-    --       cwd = "${workspaceFolder}/src",
-    --       -- we don't want to debug code inside node_modules, so skip it!
-    --       skipFiles = { "${workspaceFolder}/node_modules/**/*.js" },
-    --     },
-    --     {
-    --       type = "pwa-chrome",
-    --       name = "Launch Chrome to debug client",
-    --       request = "launch",
-    --       url = "http://localhost:5173",
-    --       sourceMaps = true,
-    --       protocol = "inspector",
-    --       port = 9222,
-    --       webRoot = "${workspaceFolder}/src",
-    --       -- skip files from vite's hmr
-    --       skipFiles = { "**/node_modules/**/*", "**/@vite/*", "**/src/client/*", "**/src/*" },
-    --     },
-    --     -- only if language is javascript, offer this debug action
-    --     language == "javascript" and {
-    --       -- use nvim-dap-vscode-js's pwa-node debug adapter
-    --       type = "pwa-node",
-    --       -- launch a new process to attach the debugger to
-    --       request = "launch",
-    --       -- name of the debug action you have to select for this config
-    --       name = "Launch file in new node process",
-    --       -- launch current file
-    --       program = "${file}",
-    --       cwd = "${workspaceFolder}",
-    --     } or nil,
-    --   }
-    -- end
+    require('dap-go').setup {
+      delve = {
+        -- On Windows delve must be run attached or it crashes.
+        -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
+        detached = vim.fn.has 'win32' == 0,
+      },
+    }
   end,
 }
